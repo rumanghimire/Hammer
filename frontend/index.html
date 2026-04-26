@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speech Articulation Trainer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="card">
+      <p class="label">FLASHCARD WORD</p>
+      <h1 id="word">dream</h1>
+      <p class="desc">Record yourself saying the word. Whisper will transcribe your audio to text, then the app compares the phonetic sounds.</p>
+      <button id="newWordBtn">New Word</button>
+      <button id="startBtn">Start Recording</button>
+      <button id="stopBtn" disabled>Stop & Analyze</button>
+      <p id="status">Ready.</p>
+    </section>
+    <section class="card">
+      <h2>Result</h2>
+      <div id="resultBox" class="result muted">No recording yet.</div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; color: #111827; }
+.container { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 56px; }
+.card { background: white; border-radius: 24px; padding: 48px; box-shadow: 0 20px 50px rgba(0,0,0,.08); }
+.label { letter-spacing: 4px; color: #667085; font-weight: 700; }
+h1 { font-size: 76px; margin: 24px 0; }
+h2 { font-size: 42px; margin-top: 0; }
+.desc { font-size: 22px; line-height: 1.5; color: #475467; max-width: 560px; }
+button { border: 0; border-radius: 999px; padding: 18px 28px; margin: 12px 10px 12px 0; font-size: 18px; font-weight: 700; background: #111827; color: white; cursor: pointer; }
+button:disabled { background: #9ca3af; cursor: not-allowed; }
+#status { font-weight: 700; margin-top: 18px; }
+.result { background: #f4f6fb; border-radius: 18px; padding: 28px; font-size: 20px; line-height: 1.5; }
+.result p { margin: 10px 0; }
+.result strong { color: #111827; }
+.error { color: #b42318; font-weight: 700; }
+.muted { color: #667085; }
+@media (max-width: 900px) { .container { grid-template-columns: 1fr; padding: 24px; } h1 { font-size: 56px; } }
