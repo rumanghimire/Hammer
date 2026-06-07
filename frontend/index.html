@@ -9,9 +9,17 @@
 <body>
   <main class="container">
     <section class="card">
+      <p class="label">PRACTICE CATEGORY</p>
+      <select id="categorySelect" aria-label="Choose practice category">
+        <option value="l">L sounds</option>
+        <option value="r">R sounds</option>
+        <option value="mixed">Mixed L/R</option>
+        <option value="minimal">Minimal pairs</option>
+      </select>
+
       <p class="label">FLASHCARD WORD</p>
       <h1 id="word">dream</h1>
-      <p class="desc">Record yourself saying the word. Whisper will transcribe your audio to text, then the app compares the phonetic sounds.</p>
+      <p id="desc" class="desc">Record yourself saying the word. Whisper will transcribe your audio to text, then the app compares the phonetic sounds.</p>
       <button id="newWordBtn">New Word</button>
       <button id="startBtn">Start Recording</button>
       <button id="stopBtn" disabled>Stop & Analyze</button>

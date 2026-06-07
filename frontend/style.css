@@ -8,6 +8,7 @@ h2 { font-size: 42px; margin-top: 0; }
 .desc { font-size: 22px; line-height: 1.5; color: #475467; max-width: 560px; }
 button { border: 0; border-radius: 999px; padding: 18px 28px; margin: 12px 10px 12px 0; font-size: 18px; font-weight: 700; background: #111827; color: white; cursor: pointer; }
 button:disabled { background: #9ca3af; cursor: not-allowed; }
+select { width: 100%; max-width: 100%; border: 1px solid #d1d5db; border-radius: 18px; padding: 16px 18px; font-size: 18px; margin: 12px 0 20px 0; background: white; color: #111827; }
 #status { font-weight: 700; margin-top: 18px; }
 .result { background: #f4f6fb; border-radius: 18px; padding: 28px; font-size: 20px; line-height: 1.5; }
 .result p { margin: 10px 0; }
