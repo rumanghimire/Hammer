@@ -3,25 +3,138 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Speech Articulation Trainer</title>
+  <title>Hammer Speech — Practice sounds. Build confidence.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <header class="app-header">
+    <div class="logo">
+      <i class="fa-solid fa-microphone-lines"></i>
+      <div class="brand">
+        <div class="title">Hammer Education</div>
+        <div class="subtitle">Practice sounds. Build confidence. Improve speech.</div>
+      </div>
+    </div>
+  </header>
+
   <main class="container">
-    <section class="card">
-      <p class="label">FLASHCARD WORD</p>
-      <h1 id="word">dream</h1>
-      <p class="desc">Record yourself saying the word. Whisper will transcribe your audio to text, then the app compares the phonetic sounds.</p>
-      <button id="newWordBtn">New Word</button>
-      <button id="startBtn">Start Recording</button>
-      <button id="stopBtn" disabled>Stop & Analyze</button>
-      <p id="status">Ready.</p>
+    <section class="left-col">
+      <div class="card selection-card">
+        <p class="sentence">I want to practice my 
+          <label for="categorySelect" class="sr-only">Choose sound</label>
+          <select id="categorySelect" aria-label="Choose practice category" class="inline-select">
+            <option value="l">/l/</option>
+            <option value="r">/r/</option>
+            <option value="th">/th/</option>
+            <option value="ch">/ch/</option>
+            <option value="mixed">Mixed words</option>
+          </select>
+          sound in 
+          <span id="positionWrapper">
+            <label for="subcategorySelect" class="sr-only">Choose position/type</label>
+            <select id="subcategorySelect" aria-label="Choose sound position/type" class="inline-select" style="display:none;"></select>
+          </span>
+          position.
+        </p>
+        <p id="subcatLabel" class="hint" style="display:none;">Select position/type</p>
+      </div>
+
+      <div class="card practice-card">
+        <div class="flashcard sticky-note" id="flashcard">
+          <div class="note-pin" title="Practice this word"><i class="fa-solid fa-volume-high"></i></div>
+          <div class="note-sub">Say this word</div>
+          <div class="flash-image-wrap note-image" id="flashImageWrap" style="display:none;">
+            <img id="flashImage" alt="Flashcard image" src="" />
+          </div>
+          <div class="note-word" id="word">dream</div>
+          <div class="note-sound" id="soundLabel">(/l/ sounds — Initial /l/)</div>
+          <p id="desc" class="desc">Record yourself saying the word. Whisper will transcribe your audio to text, then the app compares the phonetic sounds.</p>
+        </div>
+
+        <div class="controls">
+          <button id="newWordBtn" class="btn btn-secondary"><i class="fa-solid fa-dice"></i> Next Word</button>
+          <button id="startBtn" class="btn btn-primary"><i class="fa-solid fa-microphone"></i> Start Recording</button>
+          <button id="stopBtn" class="btn btn-danger" disabled><i class="fa-solid fa-square"></i> Stop & Analyze</button>
+          <button id="tryAgainBtn" class="btn" style="display:none;"><i class="fa-solid fa-rotate-left"></i> Try Again</button>
+          <span id="status" class="status">Ready.</span>
+        </div>
+
+        <div id="feedback" class="feedback card-inset hidden" aria-live="polite"></div>
+
+        <div class="debug card-inset">
+          <button id="techToggle" class="collapsible-toggle" aria-expanded="false" aria-controls="techContent">
+            <i class="fa-solid fa-circle-info"></i> Show technical details
+          </button>
+          <div id="techContent" class="collapsible-content" aria-hidden="true">
+            <h3 class="debug-title">Technical Details</h3>
+            <div id="resultBox" class="result muted">No recording yet.</div>
+          </div>
+        </div>
+      </div>
     </section>
-    <section class="card">
-      <h2>Result</h2>
-      <div id="resultBox" class="result muted">No recording yet.</div>
-    </section>
+
+    <aside class="right-col">
+      <div class="card progress-card">
+        <div class="progress-header">
+          <h2><i class="fa-solid fa-chart-simple"></i> Level Progress</h2>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="stat-label">Current Sound:</span> <span id="currentSound">/l/</span></div>
+          <div class="stat"><span class="stat-label">Current Word:</span> <span id="currentWord">dream</span></div>
+          <div class="stat"><span class="stat-label">Completed:</span> <span id="completedCount">0</span></div>
+          <div class="stat"><span class="stat-label">Remaining:</span> <span id="remainingCount">10</span></div>
+          <div class="stat"><span class="stat-label">Score:</span> <span id="scoreCount">0</span></div>
+        </div>
+        <div class="progress-bar" aria-label="Progress">
+          <div id="progressFill" class="progress-fill" style="width:0%">0%</div>
+        </div>
+        <div class="stars-wrap">
+          <div class="stars" id="starsContainer" aria-label="Stars" role="img" aria-description="Reward stars"> </div>
+          <div id="hammer" class="hammer" aria-hidden="true"><i class="fa-solid fa-hammer"></i></div>
+          <div id="sparkleLayer" class="sparkle-layer" aria-hidden="true"></div>
+        </div>
+        <div class="stars-count" id="starsCount">0 / 10 Stars</div>
+        <!-- Stars Progress mini chart -->
+        <div class="mini-chart" aria-label="Stars progress section">
+          <div class="mini-chart-title">Stars Progress</div>
+          <div id="starsProgressChart" class="stars-donut" role="img" aria-label="Stars progress chart showing 0–10 stars as a circular progress">
+            <div class="stars-donut-inner"><span id="starsDonutLabel">0 / 10</span></div>
+          </div>
+        </div>
+      </div>
+    </aside>
   </main>
+
+  <footer class="app-footer">
+    <p>Made with care by a small team who believes every voice deserves to be heard.</p>
+    <nav class="footer-links">
+      <a href="contact.html" aria-label="Contact Us">Contact Us</a>
+      <a href="#" aria-label="Privacy Policy">Privacy Policy</a>
+      <a href="#" aria-label="Terms of Service">Terms of Service</a>
+    </nav>
+  </footer>
+
+  <div id="levelModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="levelTitle" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="levelTitle">🎉 Great Job!</h3>
+      </div>
+      <div class="modal-body">
+        <p>You completed this practice level.</p>
+        <p>Stars earned: <strong id="modalStars">10/10</strong></p>
+      </div>
+      <div class="modal-actions">
+        <button id="continueBtn" class="btn btn-primary">Continue</button>
+        <button id="newLevelBtn" class="btn btn-secondary">New Level</button>
+      </div>
+      <div id="confettiCanvas" class="confetti-canvas" aria-hidden="true"></div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
