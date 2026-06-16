@@ -152,6 +152,20 @@ h2 { font-size: 24px; margin: 0 0 8px 0; }
 /* Recording/analyzing states */
 body.analyzing .btn-danger { filter: saturate(0.8) brightness(0.95); }
 
+/* Timer badge */
+.timer-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #0ea5e9;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 10px;
+  box-shadow: var(--shadow);
+  z-index: 2;
+}
+
 /* Inline analyzing overlay on practice card (visual-only) */
 .practice-card { position: relative; }
 body.analyzing .practice-card::before {
@@ -228,8 +242,8 @@ body.analyzing .practice-card::after {
 .debug .collapsible-content.open { display: block; }
 
 /* Mini Stars Progress Chart */
-.mini-chart { margin-top: 22px; }
-.mini-chart-title { font-weight: 700; font-size: 14px; color: #0b1739; margin-bottom: 6px; }
+.mini-chart { margin-top: 22px; text-align: center; }
+.mini-chart-title { font-weight: 700; font-size: 14px; color: #0b1739; margin-bottom: 6px; text-align: center; }
 .stars-chart {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
@@ -288,6 +302,27 @@ body.analyzing .practice-card::after {
   .stars-donut { width: 96px; height: 96px; }
   .stars-donut-inner { inset: 14px; font-size: 12px; }
 }
+
+/* Results card (below Level Progress) */
+.results-card { padding-top: 20px; }
+.results-header h2 { margin: 0 0 10px 0; font-size: 20px; }
+.results-section { margin-top: 10px; }
+.results-subtitle { font-weight: 700; font-size: 14px; color: #0b1739; margin-bottom: 6px; }
+.chips { display: flex; flex-direction: column; gap: 8px; min-height: 28px; }
+.chip-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06); }
+.chip-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.chip-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.chip.clickable { cursor: pointer; transition: transform .1s ease; }
+.chip.clickable:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.06); }
+.results-practice-again { margin-top: 14px; padding-top: 10px; border-top: 1px dashed rgba(15,23,42,0.08); }
+.results-prompt { font-size: 13px; color: #475569; margin-bottom: 8px; }
+.results-actions { display: flex; gap: 10px; }
+.results-note { margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+/* Tiny action button for retry */
+.btn-xs { min-height: 28px; padding: 6px 10px; font-size: 12px; border-radius: 999px; }
+.btn-xs i { font-size: 0.9em; }
 
 /* ==========================================
    Visual polish overrides (UI-only, no logic)

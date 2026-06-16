@@ -55,8 +55,9 @@
           <p id="desc" class="desc">Record yourself saying the word. Whisper will transcribe your audio to text, then the app compares the phonetic sounds.</p>
         </div>
 
+        <div id="timerBadge" class="timer-badge" aria-live="polite" title="6-second timer" style="display:none;">6s</div>
+
         <div class="controls">
-          <button id="newWordBtn" class="btn btn-secondary"><i class="fa-solid fa-dice"></i> Next Word</button>
           <button id="startBtn" class="btn btn-primary"><i class="fa-solid fa-microphone"></i> Start Recording</button>
           <button id="stopBtn" class="btn btn-danger" disabled><i class="fa-solid fa-square"></i> Stop & Analyze</button>
           <button id="tryAgainBtn" class="btn" style="display:none;"><i class="fa-solid fa-rotate-left"></i> Try Again</button>
@@ -88,22 +89,39 @@
           <div class="stat"><span class="stat-label">Completed:</span> <span id="completedCount">0</span></div>
           <div class="stat"><span class="stat-label">Remaining:</span> <span id="remainingCount">10</span></div>
           <div class="stat"><span class="stat-label">Score:</span> <span id="scoreCount">0</span></div>
-        </div>
-        <div class="progress-bar" aria-label="Progress">
-          <div id="progressFill" class="progress-fill" style="width:0%">0%</div>
+          <div class="stat"><span class="stat-label">Accuracy:</span> <span id="accuracyPct">0%</span></div>
+          <div class="stat"><span class="stat-label">Total Correct:</span> <span id="totalCorrect">0</span></div>
+          <div class="stat"><span class="stat-label">Total Incorrect:</span> <span id="totalIncorrect">0</span></div>
         </div>
         <div class="stars-wrap">
           <div class="stars" id="starsContainer" aria-label="Stars" role="img" aria-description="Reward stars"> </div>
           <div id="hammer" class="hammer" aria-hidden="true"><i class="fa-solid fa-hammer"></i></div>
           <div id="sparkleLayer" class="sparkle-layer" aria-hidden="true"></div>
         </div>
-        <div class="stars-count" id="starsCount">0 / 10 Stars</div>
-        <!-- Stars Progress mini chart -->
-        <div class="mini-chart" aria-label="Stars progress section">
-          <div class="mini-chart-title">Stars Progress</div>
-          <div id="starsProgressChart" class="stars-donut" role="img" aria-label="Stars progress chart showing 0–10 stars as a circular progress">
+        <div class="mini-chart" aria-label="Progress section">
+          <div class="mini-chart-title">Progress</div>
+          <div id="starsProgressChart" class="stars-donut" role="img" aria-label="Progress chart showing score out of 10">
             <div class="stars-donut-inner"><span id="starsDonutLabel">0 / 10</span></div>
           </div>
+        </div>
+      </div>
+
+      <!-- New Results card -->
+      <div class="card results-card">
+        <div class="results-header">
+          <h2><i class="fa-solid fa-list-check"></i> Results</h2>
+        </div>
+        <div class="results-section">
+          <div class="results-subtitle">Correct Words</div>
+          <div id="correctChips" class="chips" aria-live="polite"></div>
+        </div>
+        <div class="results-section">
+          <div class="results-subtitle">Incorrect Words</div>
+          <div id="incorrectChips" class="chips" aria-live="polite"></div>
+        </div>
+        <div class="results-practice-again">
+          <div class="results-prompt">Use the buttons beside each incorrect word to practice it again.</div>
+          <div id="practiceAgainNote" class="results-note" aria-live="polite">Finish all 10 words first. Then you can practice the incorrect words again.</div>
         </div>
       </div>
     </aside>

@@ -169,11 +169,53 @@ const resultBox = document.getElementById('resultBox');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const newWordBtn = document.getElementById('newWordBtn');
+const timerBadge = document.getElementById('timerBadge');
+let timerInterval = null;
+let timerRemaining = 6;
+let autoFromTimer = false;
 const categorySelect = document.getElementById('categorySelect');
 const subcategorySelect = document.getElementById('subcategorySelect');
 const subcatLabel = document.getElementById('subcatLabel');
 
 // New UI elements for redesigned UI
+function beginCountdown(sec) {
+  if (!timerBadge) return;
+  clearCountdown();
+  timerRemaining = sec;
+  timerBadge.style.display = '';
+  timerBadge.textContent = `${timerRemaining}s`;
+  timerInterval = setInterval(() => {
+    timerRemaining -= 1;
+    if (timerRemaining <= 0) {
+      timerBadge.textContent = '0s';
+      clearCountdown();
+      autoFromTimer = true;
+      // Auto stop & analyze
+      autoStopAndAnalyze();
+    } else {
+      timerBadge.textContent = `${timerRemaining}s`;
+    }
+  }, 1000);
+}
+function clearCountdown() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  if (timerBadge) timerBadge.style.display = 'none';
+}
+function autoStopAndAnalyze() {
+  try {
+    if (stopBtn && !stopBtn.disabled) {
+      stopBtn.click();
+    } else if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
+  } catch (e) {
+    // noop
+  }
+}
+
 const currentSoundEl = document.getElementById('currentSound');
 const currentWordEl = document.getElementById('currentWord');
 const completedCountEl = document.getElementById('completedCount');
@@ -197,6 +239,23 @@ const feedbackEl = document.getElementById('feedback');
 const techToggle = document.getElementById('techToggle');
 const techContent = document.getElementById('techContent');
 const tryAgainBtn = document.getElementById('tryAgainBtn');
+// Results card elements
+const correctChipsEl = document.getElementById('correctChips');
+const incorrectChipsEl = document.getElementById('incorrectChips');
+const practiceAgainBtn = document.getElementById('practiceAgainBtn');
+const practiceAgainNote = document.getElementById('practiceAgainNote');
+// Optional extra progress readouts
+const accuracyPctEl = document.getElementById('accuracyPct');
+const totalCorrectEl = document.getElementById('totalCorrect');
+const totalIncorrectEl = document.getElementById('totalIncorrect');
+
+// Results state (UI-only; does not affect scoring)
+let resultsCorrect = [];
+let resultsIncorrect = [];
+let lastPracticedWord = null;
+let selectedPracticeWord = null;
+let isRetryMode = false; // post-round per-word retry mode
+let retryWord = null;
 
 // Stars / progress state (scoring with half-stars and wrong states)
 const MAX_SLOTS = 10;
@@ -357,12 +416,16 @@ function awardMinimalSecondHalf(correct) {
 
 function checkEndOfLevel() {
   if (slotIndex >= MAX_SLOTS) {
+    // Disable recording controls at round completion
+    if (startBtn) startBtn.disabled = true;
+    if (stopBtn) stopBtn.disabled = true;
+
     if (tryAgainBtn) {
+      // Try Again should be clickable regardless of score
+      tryAgainBtn.style.display = '';
       if (scorePoints < 5) {
-        tryAgainBtn.style.display = '';
         statusEl.textContent = 'Round finished. Try again to reach 5 stars!';
       } else {
-        tryAgainBtn.style.display = 'none';
         statusEl.textContent = 'Great job! Keep practicing!';
         showLevelModal();
       }
@@ -374,6 +437,7 @@ function checkEndOfLevel() {
         statusEl.textContent = 'Round finished. Try again to reach 5 stars!';
       }
     }
+    updatePracticeAgainGate();
   }
 }
 
@@ -422,14 +486,67 @@ function updateProgressUI() {
     progressFillEl.style.width = `${pct}%`;
     progressFillEl.textContent = `${pct}%`;
   }
+  // Optional extra readouts derived from results history (UI-only)
+  if (accuracyPctEl || totalCorrectEl || totalIncorrectEl) {
+    const correct = resultsCorrect.length;
+    const incorrect = resultsIncorrect.length;
+    const attempts = correct + incorrect;
+    const acc = attempts ? Math.round((correct / attempts) * 100) : 0;
+    if (accuracyPctEl) accuracyPctEl.textContent = `${acc}%`;
+    if (totalCorrectEl) totalCorrectEl.textContent = String(correct);
+    if (totalIncorrectEl) totalIncorrectEl.textContent = String(incorrect);
+  }
+}
+
+// ===== Results card rendering (UI-only) =====
+function uniqueByLast(arr) {
+  const map = new Map();
+  arr.forEach((w, i) => { map.set(w, i); });
+  return Array.from(map.entries()).sort((a,b) => a[1]-b[1]).map(e => e[0]);
+}
+function renderResults() {
+  // Chips become clickable only after the round is complete (Completed=10, Remaining=0)
+  const allowed = canPracticeAgain();
+  if (correctChipsEl) {
+    const uniqCorrect = uniqueByLast(resultsCorrect);
+    correctChipsEl.innerHTML = uniqCorrect.map(w => `<span class="chip chip-success${allowed ? ' clickable' : ''}${selectedPracticeWord===w ? ' active' : ''}" data-word="${w}"><i class=\"fa-solid fa-check\"></i> ${w}</span>`).join('');
+  }
+  if (incorrectChipsEl) {
+    const uniqIncorrect = uniqueByLast(resultsIncorrect);
+    incorrectChipsEl.innerHTML = uniqIncorrect.map(w => `
+      <div class="chip-line">
+        <span class=\"chip chip-danger\"><i class=\"fa-solid fa-xmark\"></i> ${w}</span>
+        <button class=\"btn btn-secondary btn-xs retry-btn\" data-word=\"${w}\" ${allowed ? '' : 'disabled'}>
+          <i class=\"fa-solid fa-rotate-right\"></i> Practice Incorrect Word Again
+        </button>
+      </div>
+    `).join('');
+  }
+}
+function addResult(word, wasCorrect) {
+  if (!word) return;
+  lastPracticedWord = word;
+  if (wasCorrect) resultsCorrect.push(word); else resultsIncorrect.push(word);
+  // Gating controlled by canPracticeAgain(); do not enable until round completed
+  updatePracticeAgainGate();
+  renderResults();
+  updateProgressUI();
 }
 
 function resetProgress() {
   slotIndex = 0;
   scorePoints = 0;
   starStates = Array.from({ length: MAX_SLOTS }, () => 'empty');
+  // Reset results history for a fresh round (UI-only)
+  resultsCorrect = [];
+  resultsIncorrect = [];
+  lastPracticedWord = null;
+  selectedPracticeWord = null;
+  if (practiceAgainBtn) practiceAgainBtn.disabled = true;
+  renderResults();
   renderStars();
   updateProgressUI();
+  updatePracticeAgainGate();
 }
 
 function showLevelModal() {
@@ -637,7 +754,7 @@ function setNewWord() {
     if (currentMinimalPair) {
       wordEl.textContent = currentMinimalPair[minimalPairStage];
       const sub = categories[currentCategory].subcategories[currentSubcategory];
-      descEl.textContent = `Minimal pair: ${currentMinimalPair[0]} — ${currentMinimalPair[1]}. Practice the first word.`;
+      descEl.textContent = `Minimal pair: ${currentMinimalPair[0]} — ${currentMinimalPair[1]}. Practice the first word. You have 6 seconds to record; it will auto‑analyze when time ends.`;
     } else {
       wordEl.textContent = '';
       descEl.textContent = 'No minimal pairs available.';
@@ -648,8 +765,8 @@ function setNewWord() {
     currentMinimalPair = null;
     minimalPairStage = 0;
     // Keep a clean, non-duplicated instruction for the sticky note card
-    // Show a generic practice hint instead of repeating the sound/position line
-    descEl.textContent = 'Say the word clearly, then tap Start Recording and Stop & Analyze.';
+    // Add a short time-limit note so users know the countdown behavior
+    descEl.textContent = 'Say the word clearly. You have 6 seconds — it will auto‑analyze when time ends (you can also stop early).';
   }
   // Refresh auxiliary UI
   updateAuxUI();
@@ -668,15 +785,48 @@ subcategorySelect.onchange = () => {
   setNewWord();
 };
 
-const flashcardEl = document.getElementById('flashcard');
-function performFlipAnd(fn) {
-  if (!flashcardEl) { fn(); return; }
-  flashcardEl.classList.add('flip');
-  setTimeout(() => { try { fn(); } catch(e) {} }, 275);
-  setTimeout(() => flashcardEl.classList.remove('flip'), 560);
+function canPracticeAgain() {
+  return slotIndex >= MAX_SLOTS;
+}
+function updatePracticeAgainGate() {
+  const allowed = canPracticeAgain();
+  const hasChoice = Boolean(selectedPracticeWord || lastPracticedWord);
+  if (practiceAgainBtn) practiceAgainBtn.disabled = !allowed || !hasChoice;
+  if (practiceAgainNote) practiceAgainNote.style.display = allowed ? '' : '';
+  // Note text depending on state
+  if (practiceAgainNote) practiceAgainNote.textContent = allowed ? 'Round complete. You can practice only the words you missed.' : 'Finish all 10 words first. Then you can practice the incorrect words again.';
+  // Make chips clickable only when allowed
+  renderResults();
 }
 
-newWordBtn.onclick = () => performFlipAnd(setNewWord);
+const flashcardEl = document.getElementById('flashcard');
+function performFlipAnd(fn) {
+  if (!flashcardEl) { try { fn(); } catch(e) {} return; }
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReduced) { try { fn(); } catch(e) {} return; }
+  // Two-phase flip: 0 -> 90 (update content) -> 0 for a clean, reliable effect
+  flashcardEl.style.willChange = 'transform';
+  flashcardEl.style.transition = 'transform .28s ease';
+  flashcardEl.style.transform = 'rotateY(90deg)';
+  const onFirst = () => {
+    flashcardEl.removeEventListener('transitionend', onFirst);
+    try { fn(); } catch(e) {}
+    requestAnimationFrame(() => {
+      flashcardEl.style.transition = 'transform .32s ease';
+      flashcardEl.style.transform = 'rotateY(0deg)';
+      const onSecond = () => {
+        flashcardEl.removeEventListener('transitionend', onSecond);
+        flashcardEl.style.willChange = '';
+        flashcardEl.style.transition = '';
+        flashcardEl.style.transform = '';
+      };
+      flashcardEl.addEventListener('transitionend', onSecond, { once: true });
+    });
+  };
+  flashcardEl.addEventListener('transitionend', onFirst);
+}
+
+if (newWordBtn) newWordBtn.onclick = () => performFlipAnd(setNewWord);
 
 startBtn.onclick = async () => {
   audioChunks = [];
@@ -690,6 +840,9 @@ startBtn.onclick = async () => {
     statusEl.textContent = 'Recording...';
     startBtn.disabled = true;
     stopBtn.disabled = false;
+    // Start 6-second countdown timer
+    autoFromTimer = false;
+    beginCountdown(6);
   } catch (err) {
     statusEl.textContent = 'Microphone permission error.';
     resultBox.innerHTML = `<span class="error">${err.message}</span>`;
@@ -698,6 +851,7 @@ startBtn.onclick = async () => {
 
 stopBtn.onclick = async () => {
   if (!mediaRecorder) return;
+  clearCountdown();
   mediaRecorder.stop();
   stopBtn.disabled = true;
   startBtn.disabled = false;
@@ -743,9 +897,11 @@ stopBtn.onclick = async () => {
             `;
             showFeedbackCorrect(data);
             awardMinimalFirstHalf(true);
+            // Log result for Results card (UI-only)
+            try { addResult(currentMinimalPair[0], true); } catch(e) {}
             performFlipAnd(() => {
               wordEl.textContent = currentMinimalPair[1];
-              descEl.textContent = `Minimal pair: ${currentMinimalPair[0]} — ${currentMinimalPair[1]}. Now practice the second word.`;
+              descEl.textContent = `Minimal pair: ${currentMinimalPair[0]} — ${currentMinimalPair[1]}. Now practice the second word. You have 6 seconds to record; it will auto‑analyze when time ends.`;
               updateAuxUI();
             });
             document.body.classList.remove('analyzing');
@@ -761,8 +917,10 @@ stopBtn.onclick = async () => {
             `;
             showFeedbackCorrect(data);
             awardMinimalSecondHalf(true);
+            try { addResult(currentMinimalPair[1], true); } catch(e) {}
             updateAuxUI();
             document.body.classList.remove('analyzing');
+            autoFromTimer = false;
             if (newWordBtn) newWordBtn.disabled = false;
             setTimeout(() => performFlipAnd(setNewWord), 1200);
           }
@@ -783,11 +941,14 @@ stopBtn.onclick = async () => {
           showFeedbackIncorrect(data);
           if (minimalPairStage === 0) {
             awardMinimalFirstHalf(false);
+            try { addResult(currentMinimalPair[0], false); } catch(e) {}
           } else {
             awardMinimalSecondHalf(false);
+            try { addResult(currentMinimalPair[1], false); } catch(e) {}
           }
           updateAuxUI();
           document.body.classList.remove('analyzing');
+          autoFromTimer = false;
           if (newWordBtn) newWordBtn.disabled = false;
         }
       } else {
@@ -803,10 +964,56 @@ stopBtn.onclick = async () => {
           <p><strong>Missing expected sounds:</strong> ${data.missing_sounds.length ? data.missing_sounds.join(', ') : 'None'}</p>
           <p><strong>Extra spoken sounds:</strong> ${data.extra_sounds.length ? data.extra_sounds.join(', ') : 'None'}</p>
         `;
-        if (data.match) { showFeedbackCorrect(data); awardSingleResult(true); } else { showFeedbackIncorrect(data); awardSingleResult(false); }
-        updateAuxUI();
-        document.body.classList.remove('analyzing');
-        if (newWordBtn) newWordBtn.disabled = false;
+        const practicedWord = wordEl.textContent;
+        if (isRetryMode) {
+          // In retry mode (post-round), do not advance automatically.
+          if (data.match) {
+            showFeedbackCorrect(data);
+            // Move word from Incorrect -> Correct and notify
+            try {
+              // Remove all instances of the word from incorrect list
+              resultsIncorrect = resultsIncorrect.filter(w => w !== practicedWord);
+              // Add once to correct if not already present
+              if (!resultsCorrect.includes(practicedWord)) resultsCorrect.push(practicedWord);
+              renderResults();
+              updateProgressUI();
+              statusEl.textContent = `Great job! ${practicedWord} moved to Correct Words.`;
+            } catch(e) {}
+            // Keep recording controls enabled so user can choose another incorrect word
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+          } else {
+            showFeedbackIncorrect(data);
+            // Ensure it appears in Incorrect list at least once
+            try {
+              if (!resultsIncorrect.includes(practicedWord)) resultsIncorrect.push(practicedWord);
+              renderResults();
+              updateProgressUI();
+              statusEl.textContent = `Let’s try again: ${practicedWord}`;
+            } catch(e) {}
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+          }
+          // Clear analyzing overlay and timer flag in retry mode
+          document.body.classList.remove('analyzing');
+          autoFromTimer = false;
+        } else {
+          if (data.match) { 
+            showFeedbackCorrect(data); 
+            awardSingleResult(true); 
+            try { addResult(practicedWord, true); } catch(e) {}
+          } else { 
+            showFeedbackIncorrect(data); 
+            awardSingleResult(false); 
+            try { addResult(practicedWord, false); } catch(e) {}
+          }
+          updateAuxUI();
+          document.body.classList.remove('analyzing');
+          const wasAuto = autoFromTimer; autoFromTimer = false;
+          if (newWordBtn) newWordBtn.disabled = false;
+          // Always advance to a new word after analysis in non-minimal practice
+          setTimeout(() => performFlipAnd(setNewWord), 900);
+        }
       }
     } catch (err) {
       statusEl.textContent = 'Error.';
@@ -822,6 +1029,7 @@ setNewWord();
 window.addEventListener('load', async () => {
   initStars();
   updateAuxUI();
+  renderResults();
 
   // Collapsible technical details
   if (techToggle && techContent) {
@@ -839,11 +1047,87 @@ window.addEventListener('load', async () => {
   if (tryAgainBtn) {
     tryAgainBtn.addEventListener('click', () => {
       resetProgress();
+      isRetryMode = false; retryWord = null; selectedPracticeWord = null;
       tryAgainBtn.style.display = 'none';
+      // Re-enable recording for new round
+      if (startBtn) startBtn.disabled = false;
+      if (stopBtn) stopBtn.disabled = true;
       statusEl.textContent = 'Round reset. Keep practicing!';
       performFlipAnd(setNewWord);
     });
   }
+
+  // Practice Again: repeat the last practiced word without changing scoring logic
+  function loadPracticeWord(w) {
+    if (!w) return;
+    performFlipAnd(() => {
+      // If the selected word belongs to current minimal pair, set stage accordingly
+      if (isMinimalMode() && currentMinimalPair && currentMinimalPair.length === 2) {
+        if (w === currentMinimalPair[0]) minimalPairStage = 0;
+        else if (w === currentMinimalPair[1]) minimalPairStage = 1;
+        else minimalPairStage = 0;
+      }
+      wordEl.textContent = w;
+      descEl.textContent = 'Let\'s try that word again.';
+      if (feedbackEl) { feedbackEl.className = 'feedback card-inset hidden'; feedbackEl.innerHTML = ''; }
+      statusEl.textContent = 'Ready.';
+      updateAuxUI();
+    });
+  }
+
+  if (practiceAgainBtn) {
+    practiceAgainBtn.addEventListener('click', () => {
+      if (!canPracticeAgain()) return;
+      const w = selectedPracticeWord || lastPracticedWord;
+      if (!w) return;
+      loadPracticeWord(w);
+    });
+  }
+
+  // Delegate clicks on result chips to practice that specific word when allowed
+  // Delegate clicks on incorrect retry buttons
+  if (incorrectChipsEl) {
+    incorrectChipsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.retry-btn');
+      if (!btn) return;
+      const w = btn.getAttribute('data-word');
+      if (!w) return;
+      if (!canPracticeAgain()) { updatePracticeAgainGate(); return; }
+      // Enter retry mode for this exact word
+      isRetryMode = true;
+      retryWord = w;
+      selectedPracticeWord = w;
+      // Re-enable Start button to allow recording this word again
+      if (startBtn) startBtn.disabled = false;
+      if (stopBtn) stopBtn.disabled = true;
+      // Load the word into the card
+      performFlipAnd(() => {
+        wordEl.textContent = w;
+        descEl.textContent = 'Retry this incorrect word. You have 6 seconds — it will auto‑analyze when time ends (you can also stop early).';
+        statusEl.textContent = 'Ready.';
+        updateAuxUI();
+      });
+    });
+  }
+
+  // Also allow selecting a word via chips after completion (optional)
+  function setupChipDelegation(container) {
+    if (!container) return;
+    container.addEventListener('click', (e) => {
+      const target = e.target.closest('.chip.clickable');
+      if (!target) return;
+      if (!canPracticeAgain()) return;
+      const w = target.getAttribute('data-word');
+      if (!w) return;
+      selectedPracticeWord = w;
+      updatePracticeAgainGate();
+    });
+  }
+  setupChipDelegation(correctChipsEl);
+  // Note: incorrectChipsEl chips are not clickable (we use explicit buttons instead)
+
+  // Initialize gating state on load
+  updatePracticeAgainGate();
 
   statusEl.textContent = 'Checking backend...';
   const base = await getApiBase();
@@ -852,6 +1136,6 @@ window.addEventListener('load', async () => {
   } else {
     statusEl.textContent = 'Backend not reachable. Start it with: cd backend && python3 app.py';
     resultBox.className = 'result';
-    resultBox.innerHTML = `<span class="error">Backend unreachable.</span><p>Tried http://127.0.0.1:5000 and http://localhost:5000.</p><p>Start the server: <code>cd backend && python3 app.py</code></p>`;
+    resultBox.innerHTML = `<span class=\"error\">Backend unreachable.</span><p>Tried http://127.0.0.1:5000 and http://localhost:5000.</p><p>Start the server: <code>cd backend && python3 app.py</code></p>`;
   }
 });
