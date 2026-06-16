@@ -11,6 +11,25 @@ CORS(app)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+@app.route('/', methods=['GET'])
+def index():
+    return '''
+    <html><head><title>Speech Articulation Backend</title></head>
+    <body>
+      <h1>Speech Articulation Backend</h1>
+      <p>Backend is running. This server only provides API endpoints.</p>
+      <ul>
+        <li>Status: <a href="/health">/health</a></li>
+        <li>Analysis endpoint (POST): /analyze</li>
+      </ul>
+      <p>Open the frontend file directly: frontend/index.html</p>
+    </body></html>
+    ''', 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+@app.route('/favicon.ico')
+def favicon():
+    return ('', 204)
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'backend running'})

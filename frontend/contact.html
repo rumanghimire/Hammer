@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Us — Hammer Speech</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .contact-container { max-width: 880px; margin: 0 auto; padding: 0 16px 36px; }
+    .contact-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field label { font-weight: 700; font-size: 14px; color: #0b1739; }
+    .form-field input, .form-field textarea, .form-field select { padding: 12px 14px; border-radius: 12px; border: 1px solid #dbe3f3; font-family: inherit; font-size: 15px; }
+    .form-field input:focus, .form-field textarea:focus { outline: 2px solid #bfdbfe; border-color: #93c5fd; }
+    .error-text { color: #b42318; font-size: 12px; display: none; }
+    .success-banner { display: none; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 12px 14px; border-radius: 12px; font-weight: 600; }
+    .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+    @media (max-width: 700px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* Prevent default browser red invalid styling on required fields.
+       We handle errors with inline messages instead. */
+    .form-field input:invalid,
+    .form-field textarea:invalid,
+    .form-field select:invalid {
+      box-shadow: none;
+      border-color: #dbe3f3;
+      outline: none;
+    }
+    /* Firefox specific invalid state */
+    .form-field input:-moz-ui-invalid,
+    .form-field textarea:-moz-ui-invalid,
+    .form-field select:-moz-ui-invalid {
+      box-shadow: none;
+      border-color: #dbe3f3;
+    }
+    /* WebKit specific older pseudo-classes */
+    .form-field input:required:invalid,
+    .form-field textarea:required:invalid,
+    .form-field select:required:invalid {
+      box-shadow: none;
+      border-color: #dbe3f3;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo">
+      <i class="fa-solid fa-microphone-lines"></i>
+      <div class="brand">
+        <div class="title">Hammer Speech</div>
+        <div class="subtitle">Practice sounds. Build confidence. Improve speech.</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="contact-container">
+    <div class="card">
+      <h2 style="margin-top:0"><i class="fa-regular fa-envelope"></i> Contact Us</h2>
+      <p class="desc">We would love to hear from you. Please fill out the form and we’ll get back to you. This is a frontend-only form right now; a backend endpoint can be added later.</p>
+      <div id="successBanner" class="success-banner"><i class="fa-solid fa-circle-check"></i> Thank you! Your message has been received.</div>
+      <form id="contactForm" novalidate>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="fullName">Full Name *</label>
+            <input type="text" id="fullName" name="fullName" autocomplete="name" required />
+            <div class="error-text" id="errName">Name is required.</div>
+          </div>
+          <div class="form-field">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" autocomplete="email" required />
+            <div class="error-text" id="errEmail">Valid email is required.</div>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" name="subject" />
+        </div>
+        <div class="form-field">
+          <label for="message">Message / Details *</label>
+          <textarea id="message" name="message" rows="6" required></textarea>
+          <div class="error-text" id="errMessage">Message is required.</div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to Practice</a>
+          <button type="button" id="cancelBtn" class="btn"><i class="fa-solid fa-xmark"></i> Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>Made with care by a <a href="#" onclick="document.getElementById('contactForm').scrollIntoView({behavior:'smooth'});return false;">small team</a> who believes every voice deserves to be heard.</p>
+    <nav class="footer-links">
+      <a href="contact.html" aria-label="Contact Us">Contact Us</a>
+      <a href="#" aria-label="Privacy Policy">Privacy Policy</a>
+      <a href="#" aria-label="Terms of Service">Terms of Service</a>
+    </nav>
+  </footer>
+
+  <script>
+    (function(){
+      const form = document.getElementById('contactForm');
+      const banner = document.getElementById('successBanner');
+      const errName = document.getElementById('errName');
+      const errEmail = document.getElementById('errEmail');
+      const errMessage = document.getElementById('errMessage');
+      const cancelBtn = document.getElementById('cancelBtn');
+
+      function validEmail(v){
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      }
+
+      cancelBtn.addEventListener('click', () => {
+        form.reset();
+        errName.style.display = 'none';
+        errEmail.style.display = 'none';
+        errMessage.style.display = 'none';
+        banner.style.display = 'none';
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const message = document.getElementById('message').value.trim();
+
+        let ok = true;
+        if(!name){ errName.style.display = 'block'; ok = false; } else { errName.style.display = 'none'; }
+        if(!email || !validEmail(email)){ errEmail.style.display = 'block'; ok = false; } else { errEmail.style.display = 'none'; }
+        if(!message){ errMessage.style.display = 'block'; ok = false; } else { errMessage.style.display = 'none'; }
+
+        if(!ok) return;
+
+        // Frontend-only: show success, clear form, then navigate back after delay
+        banner.style.display = 'block';
+        form.reset();
+        setTimeout(() => { banner.style.display = 'none'; window.location.href = 'index.html'; }, 1600);
+      });
+    })();
+  </script>
+</body>
+</html>
